@@ -38,7 +38,7 @@ fn main() {
         )
         .get_matches();
 
-    let quiet = match matches.occurrences_of("q") {
+    let quiet = match matches.occurrences_of("quiet") {
         0 => false,
         1 => true,
         _ => true,
@@ -71,15 +71,13 @@ fn main() {
 
     match matches.subcommand_name() {
         Some("done") => {
-            println!("done");
             if let Some(ref matches) = matches.subcommand_matches("done") {
                 if let Some(item) = matches.value_of("item") {
                     println!("item {}", item);
                     match config.get(item) {
                         Some(_) => {
                             let touch_path = todo_path.join(item);
-                            let res = touch(touch_path);
-                            println!("ok: {:?}", res);
+                            let _res = touch(touch_path);
                         }
                         _ => println!("unknown item {}", item),
                     }
@@ -95,7 +93,6 @@ fn main() {
 
             for (name, interval) in config {
                 let check_path = todo_path.clone().join(name.clone());
-                //println!("check path {}", check_path.display());
                 let good = match fs::metadata(check_path) {
                     Ok(md) => {
                         if let Ok(time) = md.modified() {
