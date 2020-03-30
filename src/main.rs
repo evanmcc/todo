@@ -2,17 +2,18 @@ use chrono::prelude::*;
 use chrono::Weekday::*;
 use clap::{App, Arg, SubCommand};
 use std::convert::TryInto;
-use std::io;
 use std::io::prelude::*;
 use std::time::SystemTime;
 use std::{
     env, fs,
-    fs::{File, OpenOptions},
+    fs::File,
     path::{Path, PathBuf},
 };
 
 use toml::Value;
 use toml::Value::Table;
+
+use filetime::FileTime;
 
 fn main() {
     let matches = App::new("todo")
@@ -73,11 +74,12 @@ fn main() {
         Some("done") => {
             if let Some(ref matches) = matches.subcommand_matches("done") {
                 if let Some(item) = matches.value_of("item") {
-                    println!("item {}", item);
                     match config.get(item) {
                         Some(_) => {
                             let touch_path = todo_path.join(item);
-                            let _res = touch(touch_path);
+                            let t = FileTime::from_system_time(SystemTime::now());
+                            let _res = filetime::set_file_times(touch_path, t, t);
+                            //println!("item {:?}", _res);
                         }
                         _ => println!("unknown item {}", item),
                     }
@@ -174,13 +176,6 @@ fn get_config(config_path: PathBuf) -> Result<Value, String> {
     match config_toml.parse::<Value>() {
         Ok(config) => Ok(config),
         Err(_error) => Err("could not read config".to_string()),
-    }
-}
-
-fn touch(path: PathBuf) -> io::Result<()> {
-    match OpenOptions::new().create(true).write(true).open(path) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e),
     }
 }
 
